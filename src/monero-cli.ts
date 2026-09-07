@@ -1,6 +1,18 @@
 import moneroTs from "monero-ts";
 
 const daemonUri = process.env.MONERO_DAEMON_URI ?? "http://127.0.0.1:18081";
+const ATOMIC_UNITS_PER_XMR = 1_000_000_000_000n;
+
+function atomicUnitsToXmr(amount: bigint):string {
+  const whole = amount / ATOMIC_UNITS_PER_XMR;
+  const fraction = amount % ATOMIC_UNITS_PER_XMR;
+  const decimal = fraction.toString().padStart(12, "0").replace(/0+$/, "");
+  if (decimal === "") {
+    return whole.toString();
+  }
+  const number = `${whole.toString()}.${decimal}`;
+  return number;
+}
 
 async function connectDaemon() {
   const daemon = await moneroTs.connectToDaemonRpc(daemonUri);
@@ -35,8 +47,7 @@ async function showBlock(height: number) {
   const hashRate = block.difficulty/120n;
   console.log("Difficulty:", block.difficulty.toLocaleString());
   console.log("Network hash rate:", hashRate.toLocaleString(), "H/s");
-  const rewardXmr = Number(block.reward)/1_000_000_000_000;
-  console.log("Reward:", block.reward.toLocaleString(), "atomic units    = XMR =>    ", rewardXmr, "XMR");
+  console.log("Reward:", block.reward.toLocaleString(), "atomic units    = XMR =>    ", atomicUnitsToXmr(block.reward), "XMR");
   console.log("Regular transactions:", block.txHashes.length);
 }
 
@@ -55,8 +66,7 @@ async function showTx(hash: string) {
   console.log("In tx pool:", tx.inTxPool);
   console.log("Block height:", tx.block?.height.toLocaleString());
   console.log("Confirmations:", tx.numConfirmations?.toLocaleString() ?? 0);
-  const fee = Number(tx.fee)/1_000_000_000_000;
-  console.log("Fee:", tx.fee.toLocaleString(), "atomic units    = XMR =>    ", fee, "XMR");
+  console.log("Fee:", tx.fee.toLocaleString(), "atomic units    = XMR =>    ", atomicUnitsToXmr(tx.fee), "XMR");
   console.log("Inputs:", tx.inputs?.length);
   console.log("Outputs:", tx.outputs?.length);
 } 
@@ -80,8 +90,7 @@ async  function showMempool() {
   const totalFees = txs.reduce((sum, tx) => {
     return sum + (tx.fee ?? 0n);
   }, 0n);
-  const fee =Number(totalFees)/1_000_000_000_000;
-  console.log("Total fees:", totalFees.toLocaleString(), "atomic units    = XMR =>    ", fee, "XMR");
+  console.log("Total fees:", totalFees.toLocaleString(), "atomic units    = XMR =>    ", atomicUnitsToXmr(totalFees), "XMR");
   console.log("");
   console.log("");
   console.log("Top5 transactions by fee / weight:");
@@ -103,8 +112,7 @@ async  function showMempool() {
   sort.slice(0, 5).forEach((top, position) => {
     console.log(position + 1, ".");
     console.log("Hash:", top.hash);
-    const topFee = Number(top.fee) / 1_000_000_000_000;
-    console.log("Fee:", top.fee.toLocaleString(), "atomic units    = XMR =>    ", topFee, "XMR");
+    console.log("Fee:", top.fee.toLocaleString(), "atomic units    = XMR =>    ", atomicUnitsToXmr(top.fee), "XMR");
     console.log("Weight:", top.weight);
     console.log("Fee per weight:", top.feePerWeight.toLocaleString(), "atomic units / weight");
     console.log("");
@@ -112,6 +120,22 @@ async  function showMempool() {
 
 }
 
+
+function isValidHash(value: string): boolean {
+  const hashPattern = /^[0-9a-fA-F]{64}$/;
+  return hashPattern.test(value);
+} 
+
+function parseBlockHeight(value: string):number | undefined {
+  if (value.trim() === "") {
+    return undefined;
+  }
+  const height = Number(value);
+  if (!Number.isInteger(height) || height < 0) {
+    return undefined;
+  }
+  return height;
+}
 
 async function main() {
 
@@ -142,14 +166,14 @@ async function main() {
           return;
         } 
 
-        const number = Number(argument);
+        const height = parseBlockHeight(argument);
   
-        if (!Number.isInteger(number) || number < 0) {
+        if (height === undefined) {
           console.log("Error: invalid block height");
           return;
         }
 
-        await showBlock(number); 
+        await showBlock(height); 
         break;
       }
 
@@ -160,10 +184,8 @@ async function main() {
           console.log("Error: transaction hash is required");
           return;
         }
-      
-        const hashPattern = /^[0-9a-fA-F]{64}$/;
 
-        if (!hashPattern.test(argument)) {
+        if (!isValidHash(argument)) {
           console.log("Error: invalid transaction hash");
           return;
         }
