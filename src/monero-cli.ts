@@ -1,18 +1,12 @@
 import moneroTs from "monero-ts";
+import {
+  atomicUnitsToXmr,
+  isValidHash,
+  parseBlockHeight  
+} from "./utils.js";
+
 
 const daemonUri = process.env.MONERO_DAEMON_URI ?? "http://127.0.0.1:18081";
-const ATOMIC_UNITS_PER_XMR = 1_000_000_000_000n;
-
-function atomicUnitsToXmr(amount: bigint):string {
-  const whole = amount / ATOMIC_UNITS_PER_XMR;
-  const fraction = amount % ATOMIC_UNITS_PER_XMR;
-  const decimal = fraction.toString().padStart(12, "0").replace(/0+$/, "");
-  if (decimal === "") {
-    return whole.toString();
-  }
-  const number = `${whole.toString()}.${decimal}`;
-  return number;
-}
 
 async function connectDaemon() {
   const daemon = await moneroTs.connectToDaemonRpc(daemonUri);
@@ -118,23 +112,6 @@ async  function showMempool() {
     console.log("");
   });
 
-}
-
-
-function isValidHash(value: string): boolean {
-  const hashPattern = /^[0-9a-fA-F]{64}$/;
-  return hashPattern.test(value);
-} 
-
-function parseBlockHeight(value: string):number | undefined {
-  if (value.trim() === "") {
-    return undefined;
-  }
-  const height = Number(value);
-  if (!Number.isInteger(height) || height < 0) {
-    return undefined;
-  }
-  return height;
 }
 
 async function main() {
