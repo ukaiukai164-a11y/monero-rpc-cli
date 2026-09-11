@@ -2,6 +2,7 @@
   "name": "monero-rpc-cli",
   "version": "1.0.0",
   "description": "",
+  "license": "MIT",
   "private": true,
   "scripts": {
     "test": "tsx --test test/utils.test.ts",
