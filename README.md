@@ -1,8 +1,10 @@
 # Monero RPC CLI
 
-A small TypeScript CLI for exploring the Monero network through `monero-ts`.
+A small TypeScript CLI for exploring and learning about the Monero network through `monero-ts`.
 
-It can inspect network information, blocks, transactions, and the mempool using a Monero daemon RPC endpoint.
+Built for network exploration, RPC learning, and educational use.
+
+The CLI can inspect network information, blocks, transactions, ring members, outputs, and the mempool using a Monero daemon RPC endpoint.
 
 ## Requirements
 
@@ -18,13 +20,14 @@ http://127.0.0.1:18081
 
 ## Installation
 
-Clone the repository:
-
 ```bash
+# Clone the repository
 git clone https://github.com/ukaiukai164-a11y/monero-rpc-cli.git
 
+# Move into the project directory
 cd monero-rpc-cli
 
+# Install dependencies
 npm install
 ```
 
