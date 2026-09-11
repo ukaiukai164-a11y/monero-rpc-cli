@@ -20,11 +20,24 @@ export function parseBlockHeight(value: string):number | undefined {
   if (value.trim() === "") {
     return undefined;
   }
+
+  if (!/^\d+$/.test(value)) {
+    return undefined;
+  }
+
   const height = Number(value);
-  if (!Number.isInteger(height) || height < 0) {
+  if (!Number.isSafeInteger(height)) {
     return undefined;
   }
   return height;
 }
 
+
+export function toGlobalIndices(offsets: number[]):number[] {
+  let currentIndex = 0;
+  return offsets.map((offset) => {
+    currentIndex += offset;
+    return currentIndex;
+  });
+}
 

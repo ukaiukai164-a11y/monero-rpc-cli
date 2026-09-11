@@ -1,17 +1,18 @@
 import moneroTs from "monero-ts";
+
 import {
   atomicUnitsToXmr,
   isValidHash,
-  parseBlockHeight  
+  parseBlockHeight,
+  toGlobalIndices  
 } from "./utils.js";
 
+import {
+  connectDaemon,
+  getOuts
+} from "./rpc.js";
 
-const daemonUri = process.env.MONERO_DAEMON_URI ?? "http://127.0.0.1:18081";
 
-async function connectDaemon() {
-  const daemon = await moneroTs.connectToDaemonRpc(daemonUri);
-  return daemon;
-}
 
 async function showInfo() {
   const daemon = await connectDaemon();
@@ -60,9 +61,50 @@ async function showTx(hash: string) {
   console.log("In tx pool:", tx.inTxPool);
   console.log("Block height:", tx.block?.height.toLocaleString());
   console.log("Confirmations:", tx.numConfirmations?.toLocaleString() ?? 0);
-  console.log("Fee:", tx.fee.toLocaleString(), "atomic units    = XMR =>    ", atomicUnitsToXmr(tx.fee), "XMR");
+  const fee = tx.fee ?? 0n;
+  console.log("Fee:", fee.toLocaleString(), "atomic units    = XMR =>    ", atomicUnitsToXmr(fee), "XMR");
   console.log("Inputs:", tx.inputs?.length);
+  for (const [inputPosition, input] of (tx.inputs ?? []).entries()) {
+    const offsets = input.ringOutputIndices ?? [];
+    const globalIndices = toGlobalIndices(offsets);
+
+    console.log("");
+    console.log("-------- Input ", inputPosition + 1," -----------");
+    console.log("Key image:", input.keyImage?.hex);
+    console.log("Ring size:", offsets.length);
+    console.log("");
+    console.log("Ring members:");
+    const response = await getOuts(globalIndices);
+    response.outs.forEach((out, position) => {
+      console.log(out.txid);
+    });
+    console.log("");
+    console.log("Pseudo output:", tx.rctSigPrunable?.pseudoOuts?.[inputPosition]);
+    console.log("------------------------------");
+  }
+
+  console.log("");
+  console.log("");
   console.log("Outputs:", tx.outputs?.length);
+
+  tx.outputs?.forEach((output, outputPosition) => {
+    console.log("");
+    console.log("-------- Output ", outputPosition + 1," -----------");
+    console.log("One-time public key:", output.stealthPublicKey);
+    console.log("Global output index:", output.index);
+    console.log("Commitment:", tx.rctSignatures?.outPk?.[outputPosition]);
+    console.log("Encrypted amount:", tx.rctSignatures?.ecdhInfo?.[outputPosition]?.amount);
+    console.log("-------------------------------");
+  });
+
+  const extra = tx.extra ?? [];
+  console.log("");
+  console.log("");
+  if (extra.length >= 33 && extra[0] === 1) {
+    const txPublicKey = Buffer.from(extra.slice(1, 33)).toString("hex");
+    console.log("Transactin public key:", txPublicKey);
+  }
+
 } 
 
 async  function showMempool() {
@@ -99,11 +141,11 @@ async  function showMempool() {
     };
   });   
 
-  const sort = summaries.sort((a, b) => {  
+  const sortedSummaries = summaries.sort((a, b) => {  
     return b.feePerWeight - a.feePerWeight;
   });
 
-  sort.slice(0, 5).forEach((top, position) => {
+  sortedSummaries.slice(0, 5).forEach((top, position) => {
     console.log(position + 1, ".");
     console.log("Hash:", top.hash);
     console.log("Fee:", top.fee.toLocaleString(), "atomic units    = XMR =>    ", atomicUnitsToXmr(top.fee), "XMR");
