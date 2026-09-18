@@ -44,6 +44,11 @@ async function showBlock(height: number) {
   console.log("Network hash rate:", hashRate.toLocaleString(), "H/s");
   console.log("Reward:", block.reward.toLocaleString(), "atomic units    = XMR =>    ", atomicUnitsToXmr(block.reward), "XMR");
   console.log("Regular transactions:", block.txHashes.length);
+  console.log("");
+  console.log("Transaction hashes:");
+  block.txHashes?.forEach((txHash, position) => {
+    console.log("tx", position + 1, ":", txHash);
+  });
 }
 
 
