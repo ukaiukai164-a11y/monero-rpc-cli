@@ -5,7 +5,7 @@
   "license": "MIT",
   "private": true,
   "scripts": {
-    "test": "tsx --test test/utils.test.ts",
+    "test": "tsx ./node_modules/mocha/bin/mocha.js \"test/TestAll.ts\"",
     "typecheck": "tsc --noEmit",
     "check": "npm run typecheck && npm test"
   },
@@ -16,7 +16,9 @@
     "monero-ts": "^0.11.13"
   },
   "devDependencies": {
+    "@types/mocha": "^10.0.10",
     "@types/node": "^26.2.0",
+    "mocha": "^12.0.3",
     "tsx": "^4.23.12",
     "typescript": "^7.0.2"
   }
