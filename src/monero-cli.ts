@@ -69,6 +69,10 @@ async function showTx(hash: string) {
   const fee = tx.fee ?? 0n;
   console.log("Fee:", fee.toLocaleString(), "atomic units    = XMR =>    ", atomicUnitsToXmr(fee), "XMR");
   console.log("Inputs:", tx.inputs?.length);
+  console.log("Outputs:", tx.outputs?.length);
+  console.log("");
+  console.log("");
+  console.log("Inputs:");
   for (const [inputPosition, input] of (tx.inputs ?? []).entries()) {
     const offsets = input.ringOutputIndices ?? [];
     const globalIndices = toGlobalIndices(offsets);
@@ -90,8 +94,7 @@ async function showTx(hash: string) {
 
   console.log("");
   console.log("");
-  console.log("Outputs:", tx.outputs?.length);
-
+  console.log("Outputs:");
   tx.outputs?.forEach((output, outputPosition) => {
     console.log("");
     console.log("-------- Output ", outputPosition + 1," -----------");
@@ -111,6 +114,40 @@ async function showTx(hash: string) {
   }
 
 } 
+
+async function showRingMembers(hash: string) {
+  const daemon = await connectDaemon();
+  const txs = await daemon.getTxs([hash], false);
+  if (!txs.length) {
+    console.log("Error: transaction not found");
+    return;
+  }
+  const tx = txs[0];
+  console.log("=== Ring Members ===");
+  console.log("");
+  console.log("Inputs:", tx.inputs?.length);
+  for (const [inputPosition, input] of (tx.inputs ?? []).entries()) {
+    const offsets = input.ringOutputIndices ?? [];
+    const globalIndices = toGlobalIndices(offsets);
+    console.log("");
+    console.log("---------- Input ", inputPosition + 1, " ----------------------------------------");
+    console.log("");
+    console.log("Key image: ", input.keyImage?.hex);
+    console.log("");
+    const response = await getOuts(globalIndices);
+    response.outs.forEach((out, position) => {
+      console.log("-------- Ring member ", position + 1, " --------");
+      console.log("global index: ", globalIndices[position]);
+      console.log("Transaction hash: ", out.txid);
+      console.log("Height: ", out.height);
+      console.log("One-time public key: ", out.key);
+      console.log("Mask: ", out.mask);
+      console.log("Unlocked: ", out.unlocked);
+      console.log("");
+      console.log("");
+    });
+  }
+}
 
 async  function showMempool() {
   const daemon = await connectDaemon();
@@ -172,6 +209,7 @@ async function main() {
       console.log("  monero-cli.ts info");
       console.log("  monero-cli.ts block <height>");
       console.log("  monero-cli.ts tx <hash>");
+      console.log("  monero-cli.ts tx-rings <hash>")
       console.log("  monero-cli.ts mempool");
       return;
     }
@@ -215,6 +253,23 @@ async function main() {
         }
 
         await showTx(argument);
+        break;
+      }
+
+      case "tx-rings": {
+        const argument = process.argv[3];
+
+        if (!argument) {
+          console.log("Error: transaction hash is required");
+          return;
+        }
+
+        if (!isValidHash(argument)) {
+          console.log("Error: invalid transaction hash");
+          return;
+        }
+
+        await showRingMembers(argument);
         break;
       }
 

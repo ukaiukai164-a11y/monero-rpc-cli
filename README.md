@@ -59,6 +59,12 @@ Show a transaction by hash:
 npx tsx src/monero-cli.ts tx <transaction-hash>
 ```
 
+Show ring member details for a transaction:
+
+```bash
+npx tsx src/monero-cli.ts tx-rings <transaction-hash>
+```
+
 Show mempool information:
 
 ```bash
