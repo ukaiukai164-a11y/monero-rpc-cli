@@ -72,7 +72,13 @@ You can specify another Monero daemon using the MONERO_DAEMON_URI environment va
 Example:
 
 ```bash
-MONERO_DAEMON_URI=http://192.168.1.100:18081 npx tsx src/monero-cli.ts info
+MONERO_DAEMON_URI=http://192.168.1.100:18089 npx tsx src/monero-cli.ts info
+```
+or
+```bash
+export MONERO_DAEMON_URI=http://192.168.1.100:18089
+
+npx tsx src/monero-cli.ts info
 ```
 
 If MONERO_DAEMON_URI is not set, the CLI uses:
